@@ -1,0 +1,15 @@
+#!/bin/sh
+printf "Pre-Commit Hook"
+
+# Stash unstaged changes
+git stash -q --keep-index
+
+# Run flutter format
+# change to use `fvm flutter format lib/ test/` when using FVM
+dart format lib/ test/ --line-length 150
+
+# Stage updated files
+git add -u
+
+# Re-apply original unstaged changes
+git stash pop -q
