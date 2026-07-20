@@ -140,7 +140,7 @@ class AppTheme {
           borderSide: BorderSide(color: AppColors.outlineVariant),
         ),
         focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.secondary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         errorBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: AppColors.error),
