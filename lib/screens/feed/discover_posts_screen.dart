@@ -25,11 +25,11 @@ class DiscoverPostsScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   TextButton(
-                    onPressed: () => context.replace('/auth'),
+                    onPressed: () => Router.neglect(context, () => context.replace('/auth')),
                     child: const Text('Login'),
                   ),
                   TextButton(
-                    onPressed: () => context.replace('/auth'),
+                    onPressed: () => Router.neglect(context, () => context.replace('/auth')),
                     child: const Text('Join'),
                   ),
                 ],

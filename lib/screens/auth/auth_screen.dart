@@ -54,12 +54,12 @@ class _AuthScreenState extends State<AuthScreen> {
         ? await auth.register(email: email, password: password)
         : await auth.login(email: email, password: password);
     if (succeeded && mounted) {
-      context.replace('/');
+      Router.neglect(context, () => context.replace('/'));
     }
   }
 
   void _continueAsGuest() {
-    context.replace('/');
+    Router.neglect(context, () => context.replace('/'));
   }
 
   String? _validateEmail(String? value) {
