@@ -9,9 +9,7 @@ enum AuthStatus { unauthenticated, authenticating, authenticated }
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider(this._service) {
-    _status = _service.currentSession != null
-        ? AuthStatus.authenticated
-        : AuthStatus.unauthenticated;
+    _status = _service.currentSession != null ? AuthStatus.authenticated : AuthStatus.unauthenticated;
     _currentUser = _service.currentUser;
     _authSubscription = _service.onAuthStateChange.listen(
       _handleAuthStateChange,

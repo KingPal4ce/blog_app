@@ -1,8 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
-  AuthService([SupabaseClient? client])
-    : _client = client ?? Supabase.instance.client;
+  AuthService([SupabaseClient? client]) : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
 
@@ -43,8 +42,6 @@ class AuthService {
       'id': user.id,
       'email': user.email ?? '',
     };
-    return _client
-        .from('users')
-        .upsert(profile, onConflict: 'id', ignoreDuplicates: true);
+    return _client.from('users').upsert(profile, onConflict: 'id', ignoreDuplicates: true);
   }
 }

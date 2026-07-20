@@ -19,13 +19,11 @@ GoRouter buildRouter(AuthProvider authProvider) {
     routes: <RouteBase>[
       GoRoute(
         path: '/',
-        builder: (BuildContext context, GoRouterState state) =>
-            const DiscoverPostsScreen(),
+        builder: (BuildContext context, GoRouterState state) => const DiscoverPostsScreen(),
       ),
       GoRoute(
         path: '/auth',
-        builder: (BuildContext context, GoRouterState state) =>
-            const AuthScreen(),
+        builder: (BuildContext context, GoRouterState state) => const AuthScreen(),
       ),
     ],
   );
