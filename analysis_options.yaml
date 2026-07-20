@@ -5,6 +5,10 @@ formatter:
   page_width: 150
 
 analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.gr.dart"
+    - "**/*.mocks.dart"
   errors:
     missing_required_param: error
     invalid_assignment: warning
