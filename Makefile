@@ -18,8 +18,7 @@ quality: format lint
 models:
 	fvm dart run build_runner build --delete-conflicting-outputs
 
-rebuild:
-	version pubs models quality
+rebuild: version pubs models quality
 
 splash:
 	fvm dart run flutter_native_splash:create --path=./flutter_native_splash.yaml
