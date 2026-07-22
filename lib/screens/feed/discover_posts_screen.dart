@@ -41,6 +41,7 @@ class DiscoverPostsScreen extends StatelessWidget {
               }
               return Row(
                 mainAxisSize: MainAxisSize.min,
+                spacing: 8,
                 children: <Widget>[
                   TextButton(
                     onPressed: () => Router.neglect(context, () => context.replace('/auth')),
