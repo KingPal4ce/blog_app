@@ -12,7 +12,9 @@ const double _mdBreakpoint = 768;
 const double _lgBreakpoint = 1024;
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  const AuthScreen({this.initialMode, super.key});
+
+  final String? initialMode;
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -23,7 +25,13 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  _AuthMode _mode = _AuthMode.signIn;
+  late _AuthMode _mode;
+
+  @override
+  void initState() {
+    super.initState();
+    _mode = widget.initialMode == 'join' ? _AuthMode.join : _AuthMode.signIn;
+  }
 
   @override
   void dispose() {
