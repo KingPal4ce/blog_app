@@ -29,7 +29,8 @@ GoRouter buildRouter(AuthProvider authProvider) {
       ),
       GoRoute(
         path: '/auth',
-        builder: (BuildContext context, GoRouterState state) => const AuthScreen(),
+        builder: (BuildContext context, GoRouterState state) =>
+            AuthScreen(initialMode: state.uri.queryParameters['mode']),
       ),
       GoRoute(
         path: '/posts/new',
