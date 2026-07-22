@@ -65,9 +65,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Padding(
-          padding: EdgeInsets.only(left: 10),
-          child: Text('The Journal'),
+        title: Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: GestureDetector(
+            onTap: () => Router.neglect(context, () => context.go('/')),
+            child: const Text('The Journal'),
+          ),
         ),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
@@ -119,9 +122,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           final AuthProvider auth = context.watch<AuthProvider>();
           final PostsProvider postsProvider = context.read<PostsProvider>();
           final bool isOwner = auth.currentUser?.id == post.userId;
-          final String? imageUrl = post.coverImagePath == null
-              ? null
-              : postsProvider.coverImageUrl(post.coverImagePath!);
+          final String? imageUrl = post.coverImagePath == null ? null : postsProvider.coverImageUrl(post.coverImagePath!);
 
           return ChangeNotifierProvider<CommentsProvider>(
             create: (BuildContext context) => CommentsProvider(CommentsService(), postId: post.id),
@@ -156,8 +157,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
                             OutlinedButton.icon(
-                              onPressed: () =>
-                                  Router.neglect(context, () => context.push('/posts/${post.id}/edit')),
+                              onPressed: () => Router.neglect(context, () => context.push('/posts/${post.id}/edit')),
                               icon: const Icon(Icons.edit_outlined),
                               label: const Text('Edit Post'),
                             ),
