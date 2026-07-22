@@ -189,23 +189,94 @@ class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
                   onPick: _pickCoverImage,
                   onRemove: _removeCoverImagePressed,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
                 TextField(
                   controller: _titleController,
                   style: AppTypography.headlineLgMobile,
-                  decoration: const InputDecoration(
+                  cursorColor: AppColors.primary,
+                  decoration: InputDecoration(
                     hintText: 'Post title',
+                    hintStyle: AppTypography.headlineLgMobile.copyWith(
+                      color: AppColors.outline,
+                    ),
                     border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
                   ),
                 ),
                 const SizedBox(height: 24),
-                QuillSimpleToolbar(controller: _quillController),
-                const SizedBox(height: 8),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: AppColors.outlineVariant),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: QuillSimpleToolbar(
+                      controller: _quillController,
+                      config: QuillSimpleToolbarConfig(
+                        multiRowsDisplay: false,
+                        showFontFamily: false,
+                        showFontSize: false,
+                        showSmallButton: false,
+                        showLineHeightButton: false,
+                        showInlineCode: false,
+                        showColorButton: false,
+                        showBackgroundColorButton: false,
+                        showClearFormat: false,
+                        showAlignmentButtons: false,
+                        showListCheck: false,
+                        showCodeBlock: false,
+                        showIndent: false,
+                        showDirection: false,
+                        showSearchButton: false,
+                        showSubscript: false,
+                        showSuperscript: false,
+                        sectionDividerColor: AppColors.outlineVariant,
+                        iconTheme: QuillIconTheme(
+                          iconButtonUnselectedData: const IconButtonData(
+                            color: AppColors.onSurfaceVariant,
+                            iconSize: 18,
+                          ),
+                          iconButtonSelectedData: IconButtonData(
+                            color: AppColors.primary,
+                            iconSize: 18,
+                            style: IconButton.styleFrom(
+                              backgroundColor: AppColors.surfaceContainerHigh,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 320),
+                  constraints: const BoxConstraints(minHeight: 400),
                   child: QuillEditor.basic(
                     controller: _quillController,
-                    config: const QuillEditorConfig(scrollable: false, padding: EdgeInsets.zero),
+                    config: QuillEditorConfig(
+                      scrollable: false,
+                      padding: EdgeInsets.zero,
+                      placeholder: 'Start writing your story...',
+                      customStyles: DefaultStyles(
+                        paragraph: DefaultTextBlockStyle(
+                          AppTypography.bodyLg.copyWith(color: AppColors.onSurface),
+                          HorizontalSpacing.zero,
+                          const VerticalSpacing(0, 12),
+                          VerticalSpacing.zero,
+                          null,
+                        ),
+                        placeHolder: DefaultTextBlockStyle(
+                          AppTypography.bodyLg.copyWith(color: AppColors.outline),
+                          HorizontalSpacing.zero,
+                          VerticalSpacing.zero,
+                          VerticalSpacing.zero,
+                          null,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -217,7 +288,7 @@ class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
   }
 }
 
-class _CoverImagePicker extends StatelessWidget {
+class _CoverImagePicker extends StatefulWidget {
   const _CoverImagePicker({
     required this.existingImageUrl,
     required this.newImageBytes,
@@ -230,57 +301,89 @@ class _CoverImagePicker extends StatelessWidget {
   final VoidCallback onPick;
   final VoidCallback onRemove;
 
-  bool get _hasImage => existingImageUrl != null || newImageBytes != null;
+  @override
+  State<_CoverImagePicker> createState() => _CoverImagePickerState();
+}
+
+class _CoverImagePickerState extends State<_CoverImagePicker> {
+  bool _isHovering = false;
+
+  bool get _hasImage => widget.existingImageUrl != null || widget.newImageBytes != null;
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 21 / 9,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.outlineVariant),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              if (newImageBytes != null)
-                Image.memory(newImageBytes!, fit: BoxFit.cover)
-              else if (existingImageUrl != null)
-                CachedNetworkImage(imageUrl: existingImageUrl!, fit: BoxFit.cover)
-              else
-                InkWell(
-                  onTap: onPick,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        const Icon(Icons.add_photo_alternate_outlined, color: AppColors.onSurfaceVariant),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Add a cover image',
-                          style: AppTypography.labelMd.copyWith(color: AppColors.onSurfaceVariant),
-                        ),
-                      ],
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: AspectRatio(
+        aspectRatio: 21 / 9,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: _hasImage ? null : AppColors.surfaceContainerLow,
+            border: Border.all(
+              color: _isHovering ? AppColors.outline : AppColors.outlineVariant,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                if (widget.newImageBytes != null)
+                  Image.memory(widget.newImageBytes!, fit: BoxFit.cover)
+                else if (widget.existingImageUrl != null)
+                  CachedNetworkImage(imageUrl: widget.existingImageUrl!, fit: BoxFit.cover)
+                else
+                  InkWell(
+                    onTap: widget.onPick,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(
+                            Icons.add_photo_alternate_outlined,
+                            color: _isHovering ? AppColors.onSurface : AppColors.onSurfaceVariant,
+                            size: 32,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Add a cover image',
+                            style: AppTypography.labelMd.copyWith(
+                              color: _isHovering ? AppColors.onSurface : AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              if (_hasImage)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: CircleAvatar(
-                    backgroundColor: AppColors.surfaceContainerLowest.withValues(alpha: 0.9),
-                    child: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      color: AppColors.error,
-                      onPressed: onRemove,
+                if (_hasImage)
+                  Positioned.fill(
+                    child: InkWell(
+                      onTap: widget.onPick,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        color: _isHovering ? Colors.black.withValues(alpha: 0.15) : Colors.transparent,
+                      ),
                     ),
                   ),
-                ),
-            ],
+                if (_hasImage)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: CircleAvatar(
+                      backgroundColor: AppColors.surfaceContainerLowest.withValues(alpha: 0.9),
+                      child: IconButton(
+                        tooltip: 'Remove cover image',
+                        icon: const Icon(Icons.delete_outline),
+                        color: AppColors.error,
+                        onPressed: widget.onRemove,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
