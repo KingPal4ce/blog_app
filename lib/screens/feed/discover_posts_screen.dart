@@ -147,7 +147,7 @@ class DiscoverPostsScreen extends StatelessWidget {
                               crossAxisCount: columns,
                               crossAxisSpacing: 32,
                               mainAxisSpacing: 64,
-                              childAspectRatio: 0.85,
+                              childAspectRatio: 0.82,
                             ),
                             itemBuilder: (BuildContext context, int index) {
                               final Post post = posts.posts[index];
