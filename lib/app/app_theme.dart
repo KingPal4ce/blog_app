@@ -84,8 +84,8 @@ class AppTheme {
         ),
         titleTextStyle: TextStyle(
           fontFamily: 'Manrope',
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
+          fontSize: 24,
+          fontWeight: FontWeight.w900,
           color: AppColors.onSurface,
           letterSpacing: -0.01,
         ),
