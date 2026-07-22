@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' show Document;
 
@@ -47,10 +46,11 @@ class PostCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: imageUrl == null
                     ? const ColoredBox(color: AppColors.surfaceContainerLow)
-                    : CachedNetworkImage(
-                        imageUrl: imageUrl!,
+                    : Image.network(
+                        imageUrl!,
                         fit: BoxFit.cover,
-                        errorWidget: (BuildContext context, String url, Object error) => const ColoredBox(color: AppColors.surfaceContainerLow),
+                        errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) =>
+                            const ColoredBox(color: AppColors.surfaceContainerLow),
                       ),
               ),
             ),

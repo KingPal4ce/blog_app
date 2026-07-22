@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
@@ -334,7 +333,7 @@ class _CoverImagePickerState extends State<_CoverImagePicker> {
                 if (widget.newImageBytes != null)
                   Image.memory(widget.newImageBytes!, fit: BoxFit.cover)
                 else if (widget.existingImageUrl != null)
-                  CachedNetworkImage(imageUrl: widget.existingImageUrl!, fit: BoxFit.cover)
+                  Image.network(widget.existingImageUrl!, fit: BoxFit.cover)
                 else
                   InkWell(
                     onTap: widget.onPick,

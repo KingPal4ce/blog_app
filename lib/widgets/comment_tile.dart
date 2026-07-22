@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:blog_app/app/app_colors.dart';
@@ -62,7 +61,7 @@ class CommentTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 320, maxHeight: 240),
-                        child: CachedNetworkImage(imageUrl: imageUrl!, fit: BoxFit.cover),
+                        child: Image.network(imageUrl!, fit: BoxFit.cover),
                       ),
                     ),
                   ],

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
@@ -180,7 +179,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           borderRadius: BorderRadius.circular(8),
                           child: AspectRatio(
                             aspectRatio: 21 / 9,
-                            child: CachedNetworkImage(imageUrl: imageUrl, fit: BoxFit.cover),
+                            child: Image.network(imageUrl, fit: BoxFit.cover),
                           ),
                         ),
                       const SizedBox(height: 32),
