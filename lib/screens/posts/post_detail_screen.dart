@@ -64,10 +64,47 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Router.neglect(context, () => context.go('/')),
+        automaticallyImplyLeading: false,
+        title: const Padding(
+          padding: EdgeInsets.only(left: 10),
+          child: Text('The Journal'),
         ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: SizedBox(
+            width: double.infinity,
+            height: 1,
+            child: ColoredBox(color: AppColors.outlineVariant),
+          ),
+        ),
+        actions: <Widget>[
+          Consumer<AuthProvider>(
+            builder: (BuildContext context, AuthProvider auth, Widget? child) {
+              if (auth.isAuthenticated) {
+                return TextButton.icon(
+                  icon: const Icon(Icons.logout, size: 20),
+                  onPressed: () => context.read<AuthProvider>().logout(),
+                  label: const Text('Logout'),
+                );
+              }
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 8,
+                children: <Widget>[
+                  TextButton(
+                    onPressed: () => Router.neglect(context, () => context.replace('/auth')),
+                    child: const Text('Login'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Router.neglect(context, () => context.replace('/auth?mode=join')),
+                    child: const Text('Join'),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: FutureBuilder<Post>(
         future: _postFuture,
@@ -96,6 +133,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: () => Router.neglect(context, () => context.go('/')),
+                          icon: const Icon(Icons.arrow_back, size: 20),
+                          label: const Text('Back'),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       Text(post.title, style: AppTypography.display, textAlign: TextAlign.center),
                       const SizedBox(height: 16),
                       Center(
