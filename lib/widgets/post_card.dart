@@ -32,6 +32,7 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -49,30 +50,37 @@ class PostCard extends StatelessWidget {
                     : CachedNetworkImage(
                         imageUrl: imageUrl!,
                         fit: BoxFit.cover,
-                        errorWidget: (BuildContext context, String url, Object error) =>
-                            const ColoredBox(color: AppColors.surfaceContainerLow),
+                        errorWidget: (BuildContext context, String url, Object error) => const ColoredBox(color: AppColors.surfaceContainerLow),
                       ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Text(formatDisplayDate(post.createdAt), style: AppTypography.labelSm.copyWith(color: AppColors.onSurfaceVariant)),
-          const SizedBox(height: 8),
-          Text(post.title, style: AppTypography.headlineMd, maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 8),
-          Text(
-            _excerpt,
-            style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: <Widget>[
-              InitialsAvatar(email: post.authorEmail, radius: 16),
-              const SizedBox(width: 8),
-              Text(post.authorEmail ?? 'Unknown', style: AppTypography.labelMd),
-            ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const SizedBox(height: 12),
+                Text(formatDisplayDate(post.createdAt), style: AppTypography.labelSm.copyWith(color: AppColors.onSurfaceVariant)),
+                const SizedBox(height: 8),
+                Text(post.title, style: AppTypography.headlineMd, maxLines: 2, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 8),
+                Text(
+                  _excerpt,
+                  style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: <Widget>[
+                    InitialsAvatar(email: post.authorEmail, radius: 16),
+                    const SizedBox(width: 8),
+                    Text(post.authorEmail ?? 'Unknown', style: AppTypography.labelMd),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
