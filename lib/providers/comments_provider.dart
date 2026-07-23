@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:blog_app/models/comment.dart';
+import 'package:blog_app/models/comment_image.dart';
 import 'package:blog_app/services/comments_service.dart';
 
 class CommentsProvider extends ChangeNotifier {
@@ -44,10 +45,10 @@ class CommentsProvider extends ChangeNotifier {
   Future<bool> createComment({
     required String userId,
     required String body,
-    XFile? image,
+    List<XFile> images = const <XFile>[],
   }) {
     return _mutate(() async {
-      await _service.createComment(postId: postId, userId: userId, body: body, image: image);
+      await _service.createComment(postId: postId, userId: userId, body: body, images: images);
       await loadComments();
     });
   }
@@ -56,26 +57,26 @@ class CommentsProvider extends ChangeNotifier {
     int id, {
     required String userId,
     required String body,
-    String? existingImagePath,
-    XFile? newImage,
-    bool removeImage = false,
+    List<CommentImage> existingImages = const <CommentImage>[],
+    List<int> removedImageIds = const <int>[],
+    List<XFile> newImages = const <XFile>[],
   }) {
     return _mutate(() async {
       await _service.updateComment(
         id,
         userId: userId,
         body: body,
-        existingImagePath: existingImagePath,
-        newImage: newImage,
-        removeImage: removeImage,
+        existingImages: existingImages,
+        removedImageIds: removedImageIds,
+        newImages: newImages,
       );
       await loadComments();
     });
   }
 
-  Future<bool> deleteComment(int id, {String? imagePath}) {
+  Future<bool> deleteComment(int id, {List<CommentImage> images = const <CommentImage>[]}) {
     return _mutate(() async {
-      await _service.deleteComment(id, imagePath: imagePath);
+      await _service.deleteComment(id, images: images);
       await loadComments();
     });
   }
