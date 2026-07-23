@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:blog_app/app/app_colors.dart';
 import 'package:blog_app/app/app_typography.dart';
 import 'package:blog_app/models/comment.dart';
+import 'package:blog_app/models/comment_image.dart';
 import 'package:blog_app/models/post.dart';
+import 'package:blog_app/models/post_image.dart';
 import 'package:blog_app/providers/auth_provider.dart';
 import 'package:blog_app/providers/comments_provider.dart';
 import 'package:blog_app/providers/posts_provider.dart';
@@ -15,6 +17,7 @@ import 'package:blog_app/services/comments_service.dart';
 import 'package:blog_app/utils/date_format.dart';
 import 'package:blog_app/widgets/comment_tile.dart';
 import 'package:blog_app/widgets/initials_avatar.dart';
+import 'package:blog_app/widgets/multi_image_picker.dart';
 
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({required this.postId, super.key});
@@ -36,7 +39,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _deletePost(Post post) async {
     final PostsProvider provider = context.read<PostsProvider>();
-    final bool success = await provider.deletePost(post.id, coverImagePath: post.coverImagePath);
+    final bool success = await provider.deletePost(post.id, images: post.images);
     if (success && mounted) {
       Router.neglect(context, () => context.go('/'));
     }
@@ -121,7 +124,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           final AuthProvider auth = context.watch<AuthProvider>();
           final PostsProvider postsProvider = context.read<PostsProvider>();
           final bool isOwner = auth.currentUser?.id == post.userId;
-          final String? imageUrl = post.coverImagePath == null ? null : postsProvider.coverImageUrl(post.coverImagePath!);
+          final List<String> imageUrls = post.images.map((PostImage image) => postsProvider.imageUrl(image.imagePath)).toList();
 
           return ChangeNotifierProvider<CommentsProvider>(
             create: (BuildContext context) => CommentsProvider(CommentsService(), postId: post.id),
@@ -174,14 +177,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         ),
                       ],
                       const SizedBox(height: 32),
-                      if (imageUrl != null)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: AspectRatio(
-                            aspectRatio: 21 / 9,
-                            child: Image.network(imageUrl, fit: BoxFit.cover),
-                          ),
-                        ),
+                      if (imageUrls.isNotEmpty) _PostImageGallery(imageUrls: imageUrls),
                       const SizedBox(height: 32),
                       QuillEditor.basic(
                         controller: QuillController(
@@ -202,6 +198,118 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _PostImageGallery extends StatefulWidget {
+  const _PostImageGallery({required this.imageUrls});
+
+  final List<String> imageUrls;
+
+  @override
+  State<_PostImageGallery> createState() => _PostImageGalleryState();
+}
+
+class _PostImageGalleryState extends State<_PostImageGallery> {
+  final PageController _pageController = PageController();
+  int _page = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _goTo(int page) {
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasMultiple = widget.imageUrls.length > 1;
+    return Column(
+      children: <Widget>[
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: AspectRatio(
+            aspectRatio: 21 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                PageView.builder(
+                  controller: _pageController,
+                  itemCount: widget.imageUrls.length,
+                  onPageChanged: (int page) => setState(() => _page = page),
+                  itemBuilder: (BuildContext context, int index) =>
+                      Image.network(widget.imageUrls[index], fit: BoxFit.cover),
+                ),
+                if (hasMultiple) ...<Widget>[
+                  if (_page > 0)
+                    Positioned(
+                      left: 8,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(child: _GalleryArrowButton(icon: Icons.chevron_left, onTap: () => _goTo(_page - 1))),
+                    ),
+                  if (_page < widget.imageUrls.length - 1)
+                    Positioned(
+                      right: 8,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(child: _GalleryArrowButton(icon: Icons.chevron_right, onTap: () => _goTo(_page + 1))),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        if (hasMultiple) ...<Widget>[
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              for (int i = 0; i < widget.imageUrls.length; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: GestureDetector(
+                    onTap: () => _goTo(i),
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: i == _page ? AppColors.primary : AppColors.outlineVariant,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _GalleryArrowButton extends StatelessWidget {
+  const _GalleryArrowButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      backgroundColor: Colors.black.withValues(alpha: 0.4),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white),
+        onPressed: onTap,
       ),
     );
   }
@@ -235,10 +343,10 @@ class _CommentsSection extends StatelessWidget {
           for (final Comment comment in comments.comments)
             CommentTile(
               comment: comment,
-              imageUrl: comment.imagePath == null ? null : comments.imageUrl(comment.imagePath!),
+              imageUrls: comment.images.map((CommentImage image) => comments.imageUrl(image.imagePath)).toList(),
               isOwner: currentUserId != null && currentUserId == comment.userId,
               onEdit: () => _editComment(context, comment),
-              onDelete: () => comments.deleteComment(comment.id, imagePath: comment.imagePath),
+              onDelete: () => comments.deleteComment(comment.id, images: comment.images),
             ),
       ],
     );
@@ -261,7 +369,7 @@ class _CommentComposer extends StatefulWidget {
 
 class _CommentComposerState extends State<_CommentComposer> {
   final TextEditingController _bodyController = TextEditingController();
-  XFile? _image;
+  List<XFile> _images = <XFile>[];
   bool _isSubmitting = false;
 
   @override
@@ -270,12 +378,9 @@ class _CommentComposerState extends State<_CommentComposer> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final XFile? image = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() => _image = image);
-    }
-  }
+  void _onImagesAdded(List<XFile> images) => setState(() => _images = <XFile>[..._images, ...images]);
+
+  void _onRemoveNew(int index) => setState(() => _images = List<XFile>.of(_images)..removeAt(index));
 
   Future<void> _submit() async {
     final String body = _bodyController.text.trim();
@@ -290,11 +395,11 @@ class _CommentComposerState extends State<_CommentComposer> {
       setState(() => _isSubmitting = false);
       return;
     }
-    final bool success = await comments.createComment(userId: userId, body: body, image: _image);
+    final bool success = await comments.createComment(userId: userId, body: body, images: _images);
     if (success && mounted) {
       _bodyController.clear();
       setState(() {
-        _image = null;
+        _images = <XFile>[];
         _isSubmitting = false;
       });
     } else if (mounted) {
@@ -330,26 +435,24 @@ class _CommentComposerState extends State<_CommentComposer> {
                       border: UnderlineInputBorder(),
                     ),
                   ),
-                  if (_image != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text('Attached: ${_image!.name}', style: AppTypography.labelSm),
-                    ),
+                  const SizedBox(height: 12),
+                  MultiImagePicker(
+                    existingImages: const <ExistingPickerImage>[],
+                    newImages: _images,
+                    onRemoveExisting: (_) {},
+                    onImagesAdded: _onImagesAdded,
+                    onRemoveNew: _onRemoveNew,
+                    tileSize: 72,
+                    enabled: !_isSubmitting,
+                  ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: <Widget>[
-                      IconButton(
-                        onPressed: _isSubmitting ? null : _pickImage,
-                        icon: const Icon(Icons.image_outlined),
-                        tooltip: 'Attach Image',
-                      ),
-                      const Spacer(),
-                      FilledButton(
-                        onPressed: _isSubmitting ? null : _submit,
-                        style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-                        child: const Text('Post Comment'),
-                      ),
-                    ],
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                      child: const Text('Post Comment'),
+                    ),
                   ),
                 ],
               ),
@@ -372,7 +475,8 @@ class _CommentEditDialog extends StatefulWidget {
 
 class _CommentEditDialogState extends State<_CommentEditDialog> {
   late final TextEditingController _bodyController = TextEditingController(text: widget.comment.body);
-  bool _removeImage = false;
+  final Set<int> _removedImageIds = <int>{};
+  List<XFile> _newImages = <XFile>[];
   bool _isSubmitting = false;
 
   @override
@@ -380,6 +484,12 @@ class _CommentEditDialogState extends State<_CommentEditDialog> {
     _bodyController.dispose();
     super.dispose();
   }
+
+  void _onRemoveExisting(int id) => setState(() => _removedImageIds.add(id));
+
+  void _onImagesAdded(List<XFile> images) => setState(() => _newImages = <XFile>[..._newImages, ...images]);
+
+  void _onRemoveNew(int index) => setState(() => _newImages = List<XFile>.of(_newImages)..removeAt(index));
 
   Future<void> _submit() async {
     final String body = _bodyController.text.trim();
@@ -398,8 +508,9 @@ class _CommentEditDialogState extends State<_CommentEditDialog> {
       widget.comment.id,
       userId: userId,
       body: body,
-      existingImagePath: widget.comment.imagePath,
-      removeImage: _removeImage,
+      existingImages: widget.comment.images,
+      removedImageIds: _removedImageIds.toList(),
+      newImages: _newImages,
     );
     if (mounted) {
       if (success) {
@@ -412,6 +523,11 @@ class _CommentEditDialogState extends State<_CommentEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final CommentsProvider comments = context.read<CommentsProvider>();
+    final List<ExistingPickerImage> existingPickerImages = widget.comment.images
+        .where((CommentImage image) => !_removedImageIds.contains(image.id))
+        .map((CommentImage image) => ExistingPickerImage(id: image.id, url: comments.imageUrl(image.imagePath)))
+        .toList();
     return AlertDialog(
       title: const Text('Edit comment'),
       content: Column(
@@ -419,14 +535,16 @@ class _CommentEditDialogState extends State<_CommentEditDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           TextField(controller: _bodyController, maxLines: 4),
-          if (widget.comment.imagePath != null)
-            CheckboxListTile(
-              value: _removeImage,
-              onChanged: (bool? value) => setState(() => _removeImage = value ?? false),
-              title: const Text('Remove attached image'),
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
+          const SizedBox(height: 12),
+          MultiImagePicker(
+            existingImages: existingPickerImages,
+            newImages: _newImages,
+            onRemoveExisting: _onRemoveExisting,
+            onImagesAdded: _onImagesAdded,
+            onRemoveNew: _onRemoveNew,
+            tileSize: 72,
+            enabled: !_isSubmitting,
+          ),
         ],
       ),
       actions: <Widget>[
