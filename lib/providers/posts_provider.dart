@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:blog_app/models/post.dart';
+import 'package:blog_app/models/post_image.dart';
 import 'package:blog_app/services/posts_service.dart';
 
 class PostsProvider extends ChangeNotifier {
@@ -57,7 +58,7 @@ class PostsProvider extends ChangeNotifier {
 
   Future<void> refresh() => loadPage(_currentPage);
 
-  String coverImageUrl(String path) => _service.getPublicUrl(path);
+  String imageUrl(String path) => _service.getPublicUrl(path);
 
   Future<Post> fetchPost(int id) => _service.fetchPost(id);
 
@@ -65,14 +66,14 @@ class PostsProvider extends ChangeNotifier {
     required String userId,
     required String title,
     required List<dynamic> body,
-    XFile? coverImage,
+    List<XFile> images = const <XFile>[],
   }) {
     return _mutate(() async {
       final Post post = await _service.createPost(
         userId: userId,
         title: title,
         body: body,
-        coverImage: coverImage,
+        images: images,
       );
       await loadPage(1);
       return post;
@@ -84,9 +85,9 @@ class PostsProvider extends ChangeNotifier {
     required String userId,
     required String title,
     required List<dynamic> body,
-    String? existingCoverImagePath,
-    XFile? newCoverImage,
-    bool removeCoverImage = false,
+    List<PostImage> existingImages = const <PostImage>[],
+    List<int> removedImageIds = const <int>[],
+    List<XFile> newImages = const <XFile>[],
   }) {
     return _mutate(() async {
       final Post post = await _service.updatePost(
@@ -94,18 +95,18 @@ class PostsProvider extends ChangeNotifier {
         userId: userId,
         title: title,
         body: body,
-        existingCoverImagePath: existingCoverImagePath,
-        newCoverImage: newCoverImage,
-        removeCoverImage: removeCoverImage,
+        existingImages: existingImages,
+        removedImageIds: removedImageIds,
+        newImages: newImages,
       );
       await refresh();
       return post;
     });
   }
 
-  Future<bool> deletePost(int id, {String? coverImagePath}) async {
+  Future<bool> deletePost(int id, {List<PostImage> images = const <PostImage>[]}) async {
     final bool? result = await _mutate(() async {
-      await _service.deletePost(id, coverImagePath: coverImagePath);
+      await _service.deletePost(id, images: images);
       await refresh();
       return true;
     });
