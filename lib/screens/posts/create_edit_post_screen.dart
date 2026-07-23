@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -10,8 +9,10 @@ import 'package:provider/provider.dart';
 import 'package:blog_app/app/app_colors.dart';
 import 'package:blog_app/app/app_typography.dart';
 import 'package:blog_app/models/post.dart';
+import 'package:blog_app/models/post_image.dart';
 import 'package:blog_app/providers/auth_provider.dart';
 import 'package:blog_app/providers/posts_provider.dart';
+import 'package:blog_app/widgets/multi_image_picker.dart';
 
 class CreateEditPostScreen extends StatefulWidget {
   const CreateEditPostScreen({this.postId, super.key});
@@ -25,12 +26,10 @@ class CreateEditPostScreen extends StatefulWidget {
 class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
   final TextEditingController _titleController = TextEditingController();
   late final QuillController _quillController = QuillController.basic();
-  final ImagePicker _imagePicker = ImagePicker();
 
-  XFile? _newCoverImage;
-  Uint8List? _newCoverImageBytes;
-  String? _existingCoverImagePath;
-  bool _removeCoverImage = false;
+  List<PostImage> _existingImages = <PostImage>[];
+  final Set<int> _removedImageIds = <int>{};
+  List<XFile> _newImages = <XFile>[];
   bool _isSubmitting = false;
   bool _isLoading = false;
   String? _loadError;
@@ -58,7 +57,7 @@ class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
       final Post post = await context.read<PostsProvider>().fetchPost(widget.postId!);
       _titleController.text = post.title;
       _quillController.document = Document.fromJson(post.body);
-      _existingCoverImagePath = post.coverImagePath;
+      _existingImages = post.images;
     } on Object {
       _loadError = 'Failed to load post.';
     } finally {
@@ -68,26 +67,11 @@ class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
     }
   }
 
-  Future<void> _pickCoverImage() async {
-    final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
-    if (image == null) {
-      return;
-    }
-    final Uint8List bytes = await image.readAsBytes();
-    setState(() {
-      _newCoverImage = image;
-      _newCoverImageBytes = bytes;
-      _removeCoverImage = false;
-    });
-  }
+  void _onRemoveExisting(int id) => setState(() => _removedImageIds.add(id));
 
-  void _removeCoverImagePressed() {
-    setState(() {
-      _newCoverImage = null;
-      _newCoverImageBytes = null;
-      _removeCoverImage = true;
-    });
-  }
+  void _onImagesAdded(List<XFile> images) => setState(() => _newImages = <XFile>[..._newImages, ...images]);
+
+  void _onRemoveNew(int index) => setState(() => _newImages = List<XFile>.of(_newImages)..removeAt(index));
 
   Future<void> _publish() async {
     final String title = _titleController.text.trim();
@@ -112,15 +96,15 @@ class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
             userId: userId,
             title: title,
             body: body,
-            existingCoverImagePath: _existingCoverImagePath,
-            newCoverImage: _newCoverImage,
-            removeCoverImage: _removeCoverImage,
+            existingImages: _existingImages,
+            removedImageIds: _removedImageIds.toList(),
+            newImages: _newImages,
           )
         : await postsProvider.createPost(
             userId: userId,
             title: title,
             body: body,
-            coverImage: _newCoverImage,
+            images: _newImages,
           );
 
     if (!mounted) {
@@ -144,6 +128,11 @@ class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
     if (_loadError != null) {
       return Scaffold(body: Center(child: Text(_loadError!)));
     }
+    final PostsProvider postsProvider = context.read<PostsProvider>();
+    final List<ExistingPickerImage> existingPickerImages = _existingImages
+        .where((PostImage image) => !_removedImageIds.contains(image.id))
+        .map((PostImage image) => ExistingPickerImage(id: image.id, url: postsProvider.imageUrl(image.imagePath)))
+        .toList();
     return Scaffold(
       appBar: AppBar(
         leading: TextButton.icon(
@@ -180,13 +169,15 @@ class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                _CoverImagePicker(
-                  existingImageUrl: _existingCoverImagePath == null || _removeCoverImage
-                      ? null
-                      : context.read<PostsProvider>().coverImageUrl(_existingCoverImagePath!),
-                  newImageBytes: _newCoverImageBytes,
-                  onPick: _pickCoverImage,
-                  onRemove: _removeCoverImagePressed,
+                Text('Images', style: AppTypography.labelMd.copyWith(color: AppColors.onSurfaceVariant)),
+                const SizedBox(height: 12),
+                MultiImagePicker(
+                  existingImages: existingPickerImages,
+                  newImages: _newImages,
+                  onRemoveExisting: _onRemoveExisting,
+                  onImagesAdded: _onImagesAdded,
+                  onRemoveNew: _onRemoveNew,
+                  enabled: !_isSubmitting,
                 ),
                 const SizedBox(height: 40),
                 TextField(
@@ -278,109 +269,6 @@ class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CoverImagePicker extends StatefulWidget {
-  const _CoverImagePicker({
-    required this.existingImageUrl,
-    required this.newImageBytes,
-    required this.onPick,
-    required this.onRemove,
-  });
-
-  final String? existingImageUrl;
-  final Uint8List? newImageBytes;
-  final VoidCallback onPick;
-  final VoidCallback onRemove;
-
-  @override
-  State<_CoverImagePicker> createState() => _CoverImagePickerState();
-}
-
-class _CoverImagePickerState extends State<_CoverImagePicker> {
-  bool _isHovering = false;
-
-  bool get _hasImage => widget.existingImageUrl != null || widget.newImageBytes != null;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
-      child: AspectRatio(
-        aspectRatio: 21 / 9,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: _hasImage ? null : AppColors.surfaceContainerLow,
-            border: Border.all(
-              color: _isHovering ? AppColors.outline : AppColors.outlineVariant,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
-                if (widget.newImageBytes != null)
-                  Image.memory(widget.newImageBytes!, fit: BoxFit.cover)
-                else if (widget.existingImageUrl != null)
-                  Image.network(widget.existingImageUrl!, fit: BoxFit.cover)
-                else
-                  InkWell(
-                    onTap: widget.onPick,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Icon(
-                            Icons.add_photo_alternate_outlined,
-                            color: _isHovering ? AppColors.onSurface : AppColors.onSurfaceVariant,
-                            size: 32,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Add a cover image',
-                            style: AppTypography.labelMd.copyWith(
-                              color: _isHovering ? AppColors.onSurface : AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                if (_hasImage)
-                  Positioned.fill(
-                    child: InkWell(
-                      onTap: widget.onPick,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        color: _isHovering ? Colors.black.withValues(alpha: 0.15) : Colors.transparent,
-                      ),
-                    ),
-                  ),
-                if (_hasImage)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: CircleAvatar(
-                      backgroundColor: AppColors.surfaceContainerLowest.withValues(alpha: 0.9),
-                      child: IconButton(
-                        tooltip: 'Remove cover image',
-                        icon: const Icon(Icons.delete_outline),
-                        color: AppColors.error,
-                        onPressed: widget.onRemove,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
