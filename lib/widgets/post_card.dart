@@ -11,12 +11,14 @@ class PostCard extends StatelessWidget {
   const PostCard({
     required this.post,
     required this.imageUrl,
+    required this.imageCount,
     required this.onTap,
     super.key,
   });
 
   final Post post;
   final String? imageUrl;
+  final int imageCount;
   final VoidCallback onTap;
 
   String get _excerpt {
@@ -44,14 +46,45 @@ class PostCard extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: imageUrl == null
-                    ? const ColoredBox(color: AppColors.surfaceContainerLow)
-                    : Image.network(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    if (imageUrl == null)
+                      const ColoredBox(color: AppColors.surfaceContainerLow)
+                    else
+                      Image.network(
                         imageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) =>
                             const ColoredBox(color: AppColors.surfaceContainerLow),
                       ),
+                    if (imageCount > 1)
+                      Positioned(
+                        right: 8,
+                        bottom: 8,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                const Icon(Icons.photo_library_outlined, size: 14, color: Colors.white),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$imageCount',
+                                  style: AppTypography.labelSm.copyWith(color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
