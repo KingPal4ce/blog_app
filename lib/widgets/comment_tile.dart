@@ -9,7 +9,7 @@ import 'package:blog_app/widgets/initials_avatar.dart';
 class CommentTile extends StatelessWidget {
   const CommentTile({
     required this.comment,
-    required this.imageUrl,
+    required this.imageUrls,
     required this.isOwner,
     this.onEdit,
     this.onDelete,
@@ -17,7 +17,7 @@ class CommentTile extends StatelessWidget {
   });
 
   final Comment comment;
-  final String? imageUrl;
+  final List<String> imageUrls;
   final bool isOwner;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
@@ -55,14 +55,22 @@ class CommentTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(comment.body, style: AppTypography.bodyMd),
-                  if (imageUrl != null) ...<Widget>[
+                  if (imageUrls.isNotEmpty) ...<Widget>[
                     const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 320, maxHeight: 240),
-                        child: Image.network(imageUrl!, fit: BoxFit.cover),
-                      ),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: <Widget>[
+                        for (final String url in imageUrls)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: SizedBox(
+                              width: 96,
+                              height: 96,
+                              child: Image.network(url, fit: BoxFit.cover),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                   if (isOwner) ...<Widget>[
