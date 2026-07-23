@@ -151,10 +151,11 @@ class DiscoverPostsScreen extends StatelessWidget {
                             ),
                             itemBuilder: (BuildContext context, int index) {
                               final Post post = posts.posts[index];
-                              final String? imageUrl = post.coverImagePath == null ? null : posts.coverImageUrl(post.coverImagePath!);
+                              final String? imageUrl = post.images.isEmpty ? null : posts.imageUrl(post.images.first.imagePath);
                               return PostCard(
                                 post: post,
                                 imageUrl: imageUrl,
+                                imageCount: post.images.length,
                                 onTap: () => Router.neglect(context, () => context.push('/posts/${post.id}')),
                               );
                             },
