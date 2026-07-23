@@ -1,16 +1,16 @@
 # The Journal
 
-A Flutter blog/journaling web app backed by [Supabase](https://supabase.com/) (Postgres, Auth, and Storage). Users can sign up, write posts with a rich-text editor and cover images, browse a paginated feed, and comment on posts.
+A Flutter blog/journaling web app backed by [Supabase](https://supabase.com/) (Postgres, Auth, and Storage). Users can sign up, write posts with a rich-text editor and multiple images, browse a paginated public feed, and comment on posts with their own image attachments.
 
 This project targets **web** as its primary platform (deployed on Vercel).
 
 ## Features
 
 - **Auth** — email/password sign up and sign in via Supabase Auth, with a `public.users` profile row created on sign-up.
-- **Feed** — paginated list of posts on the discover screen.
-- **Posts** — create/edit posts with a [flutter_quill](https://pub.dev/packages/flutter_quill) rich-text editor, cover image upload, and delete/edit for the post owner.
-- **Comments** — add comments (with optional image attachment) on a post's detail screen.
-- **Storage** — cover images and comment attachments are stored in a public `post-images` Supabase Storage bucket, scoped per user with RLS.
+- **Feed** — paginated list of posts on the discover screen, visible to signed-out visitors.
+- **Posts** — create/edit posts with a [flutter_quill](https://pub.dev/packages/flutter_quill) rich-text editor and multiple images (add/remove individually), full delete/edit for the post owner.
+- **Comments** — add, edit, and delete comments on a post's detail screen, each with its own set of images (add/remove individually).
+- **Storage** — post and comment images are stored in a public `post-images` Supabase Storage bucket, scoped per user with RLS.
 
 ## Tech stack
 
@@ -32,15 +32,15 @@ Flutter SDK is pinned via [FVM](https://fvm.app/) — see `.fvmrc` (`3.44.6`). D
 lib/
 ├── main.dart          # Entry point: loads .env, initializes Supabase, boots the app
 ├── app/               # App shell, theming, and go_router route table
-├── models/            # Post, Comment, UserProfile (json_serializable)
+├── models/            # Post, PostImage, Comment, CommentImage, UserProfile (json_serializable)
 ├── services/          # Supabase data-access layer (auth, posts, comments)
 ├── providers/         # ChangeNotifier state consumed by the UI
 ├── screens/           # auth, feed (discover), post detail, create/edit post
-├── widgets/           # Reusable UI (post card, comment tile, avatar, pagination)
+├── widgets/           # Reusable UI (post card, comment tile, multi-image picker, avatar, pagination)
 └── utils/             # Date formatting, avatar initials helpers
 
 supabase/
-└── migrations/        # SQL migrations for users, posts, comments, and storage bucket
+└── migrations/        # SQL migrations for users, posts, comments, post_images/comment_images, and the storage bucket
 ```
 
 ## Getting started
@@ -68,7 +68,7 @@ supabase/
 
    `.env` is git-ignored and is bundled as a Flutter asset, so it must exist locally (and in CI/deploy environments) for the app to run.
 
-3. Apply the database schema. Migrations live in `supabase/migrations/` and set up the `users`, `posts`, and `comments` tables (with RLS) plus the `post-images` storage bucket. Apply them with the [Supabase CLI](https://supabase.com/docs/guides/cli):
+3. Apply the database schema. Migrations live in `supabase/migrations/` and set up the `users`, `posts`, `comments`, `post_images`, and `comment_images` tables (with RLS) plus the `post-images` storage bucket. Apply them with the [Supabase CLI](https://supabase.com/docs/guides/cli):
 
    ```
    supabase link --project-ref your-project-ref
