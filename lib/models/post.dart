@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'package:blog_app/models/post_image.dart';
+
 part 'post.g.dart';
 
 @JsonSerializable()
@@ -10,12 +12,12 @@ class Post {
     required this.authorEmail,
     required this.title,
     required this.body,
-    required this.coverImagePath,
+    required this.images,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(_flattenAuthor(json));
+  factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(_normalize(json));
 
   final int id;
 
@@ -29,8 +31,7 @@ class Post {
 
   final List<dynamic> body;
 
-  @JsonKey(name: 'cover_image_path')
-  final String? coverImagePath;
+  final List<PostImage> images;
 
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
@@ -40,12 +41,13 @@ class Post {
 
   Map<String, dynamic> toJson() => _$PostToJson(this);
 
-  static Map<String, dynamic> _flattenAuthor(Map<String, dynamic> json) {
-    final Map<String, dynamic> flattened = Map<String, dynamic>.from(json);
-    final Object? author = flattened.remove('users');
+  static Map<String, dynamic> _normalize(Map<String, dynamic> json) {
+    final Map<String, dynamic> normalized = Map<String, dynamic>.from(json);
+    final Object? author = normalized.remove('users');
     if (author is Map<String, dynamic>) {
-      flattened['author_email'] = author['email'];
+      normalized['author_email'] = author['email'];
     }
-    return flattened;
+    normalized['images'] = normalized.remove('post_images') ?? <dynamic>[];
+    return normalized;
   }
 }
