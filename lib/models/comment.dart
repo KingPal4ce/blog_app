@@ -15,6 +15,7 @@ class Comment {
     required this.images,
     required this.createdAt,
     required this.updatedAt,
+    this.deletedAt,
   });
 
   factory Comment.fromJson(Map<String, dynamic> json) => _$CommentFromJson(_normalize(json));
@@ -39,6 +40,11 @@ class Comment {
 
   @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
+
+  @JsonKey(name: 'deleted_at')
+  final DateTime? deletedAt;
+
+  bool get isDeleted => deletedAt != null;
 
   Map<String, dynamic> toJson() => _$CommentToJson(this);
 
