@@ -24,6 +24,7 @@ class CommentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String? displayEmail = comment.isDeleted ? 'anonymous' : comment.authorEmail;
     return DecoratedBox(
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.surfaceContainerHighest)),
@@ -33,7 +34,7 @@ class CommentTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            InitialsAvatar(email: comment.authorEmail, radius: 20, highlighted: isOwner),
+            InitialsAvatar(email: displayEmail, radius: 20, highlighted: isOwner),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -43,7 +44,7 @@ class CommentTile extends StatelessWidget {
                     children: <Widget>[
                       Expanded(
                         child: Text(
-                          comment.authorEmail ?? 'Unknown',
+                          displayEmail ?? 'Unknown',
                           style: AppTypography.labelMd.copyWith(color: AppColors.secondary),
                         ),
                       ),
@@ -54,44 +55,54 @@ class CommentTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(comment.body, style: AppTypography.bodyMd),
-                  if (imageUrls.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: <Widget>[
-                        for (final String url in imageUrls)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: SizedBox(
-                              width: 96,
-                              height: 96,
-                              child: Image.network(url, fit: BoxFit.cover),
+                  if (comment.isDeleted)
+                    Text(
+                      'This comment has been deleted.',
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  else ...<Widget>[
+                    Text(comment.body, style: AppTypography.bodyMd),
+                    if (imageUrls.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: <Widget>[
+                          for (final String url in imageUrls)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: SizedBox(
+                                width: 96,
+                                height: 96,
+                                child: Image.network(url, fit: BoxFit.cover),
+                              ),
                             ),
+                        ],
+                      ),
+                    ],
+                    if (isOwner) ...<Widget>[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: <Widget>[
+                          IconButton(
+                            iconSize: 18,
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: onEdit,
                           ),
-                      ],
-                    ),
-                  ],
-                  if (isOwner) ...<Widget>[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: <Widget>[
-                        IconButton(
-                          iconSize: 18,
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.edit_outlined),
-                          onPressed: onEdit,
-                        ),
-                        IconButton(
-                          iconSize: 18,
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.delete_outline),
-                          color: AppColors.error,
-                          onPressed: onDelete,
-                        ),
-                      ],
-                    ),
+                          IconButton(
+                            iconSize: 18,
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.delete_outline),
+                            color: AppColors.error,
+                            onPressed: onDelete,
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ],
               ),
