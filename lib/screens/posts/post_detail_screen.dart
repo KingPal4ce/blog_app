@@ -37,6 +37,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     _postFuture = context.read<PostsProvider>().fetchPost(widget.postId);
   }
 
+  Future<void> _editPost(Post post) async {
+    late final Future<Object?> resultFuture;
+    Router.neglect(context, () => resultFuture = context.push<Object?>('/posts/${post.id}/edit'));
+    final Object? result = await resultFuture;
+    if (result is Post && mounted) {
+      setState(() => _postFuture = Future<Post>.value(result));
+    }
+  }
+
   Future<void> _deletePost(Post post) async {
     final PostsProvider provider = context.read<PostsProvider>();
     final bool success = await provider.deletePost(post.id, images: post.images);
@@ -159,7 +168,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
                             OutlinedButton.icon(
-                              onPressed: () => Router.neglect(context, () => context.push('/posts/${post.id}/edit')),
+                              onPressed: () => _editPost(post),
                               icon: const Icon(Icons.edit_outlined),
                               label: const Text('Edit Post'),
                             ),
