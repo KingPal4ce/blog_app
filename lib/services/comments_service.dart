@@ -83,7 +83,14 @@ class CommentsService {
     if (images.isNotEmpty) {
       await _client.storage.from(_bucket).remove(images.map((CommentImage image) => image.imagePath).toList());
     }
-    await _client.from(_table).delete().eq('id', id);
+    await _client.from(_imagesTable).delete().eq('comment_id', id);
+    await _client
+        .from(_table)
+        .update(<String, dynamic>{
+          'body': '',
+          'deleted_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', id);
   }
 
   String getPublicUrl(String path) => _client.storage.from(_bucket).getPublicUrl(path);
