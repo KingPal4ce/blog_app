@@ -111,7 +111,11 @@ class _CreateEditPostScreenState extends State<CreateEditPostScreen> {
       return;
     }
     if (result != null) {
-      Router.neglect(context, () => context.go('/posts/${result.id}'));
+      if (_isEditing) {
+        Router.neglect(context, () => context.pop(result));
+      } else {
+        Router.neglect(context, () => context.go('/posts/${result.id}'));
+      }
     } else {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
