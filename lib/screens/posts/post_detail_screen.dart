@@ -315,11 +315,22 @@ class _GalleryArrowButton extends StatelessWidget {
   }
 }
 
-class _CommentsSection extends StatelessWidget {
+class _CommentsSection extends StatefulWidget {
   const _CommentsSection({required this.currentUserId, required this.isAuthenticated});
 
   final String? currentUserId;
   final bool isAuthenticated;
+
+  @override
+  State<_CommentsSection> createState() => _CommentsSectionState();
+}
+
+class _CommentsSectionState extends State<_CommentsSection> {
+  int? _editingCommentId;
+
+  void _startEditing(int commentId) => setState(() => _editingCommentId = commentId);
+
+  void _stopEditing() => setState(() => _editingCommentId = null);
 
   @override
   Widget build(BuildContext context) {
@@ -329,7 +340,7 @@ class _CommentsSection extends StatelessWidget {
       children: <Widget>[
         Text('Discussion (${comments.comments.length})', style: AppTypography.headlineMd),
         const SizedBox(height: 24),
-        if (isAuthenticated)
+        if (widget.isAuthenticated)
           const _CommentComposer()
         else
           Text(
@@ -341,22 +352,41 @@ class _CommentsSection extends StatelessWidget {
           const Center(child: CircularProgressIndicator())
         else
           for (final Comment comment in comments.comments)
-            CommentTile(
-              comment: comment,
-              imageUrls: comment.images.map((CommentImage image) => comments.imageUrl(image.imagePath)).toList(),
-              isOwner: currentUserId != null && currentUserId == comment.userId,
-              onEdit: () => _editComment(context, comment),
-              onDelete: () => comments.deleteComment(comment.id, images: comment.images),
-            ),
+            if (_editingCommentId == comment.id)
+              _CommentEditForm(comment: comment, onCancel: _stopEditing, onSaved: _stopEditing)
+            else
+              CommentTile(
+                comment: comment,
+                imageUrls: comment.images.map((CommentImage image) => comments.imageUrl(image.imagePath)).toList(),
+                isOwner: widget.currentUserId != null && widget.currentUserId == comment.userId,
+                onEdit: () => _startEditing(comment.id),
+                onDelete: () => _confirmDeleteComment(context, comments, comment),
+              ),
       ],
     );
   }
 
-  Future<void> _editComment(BuildContext context, Comment comment) async {
-    await showDialog<void>(
+  Future<void> _confirmDeleteComment(BuildContext context, CommentsProvider comments, Comment comment) async {
+    final bool? confirmed = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) => _CommentEditDialog(comment: comment),
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Delete comment?'),
+        content: const Text('This cannot be undone.'),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
+        ],
+      ),
     );
+    if (confirmed != true) {
+      return;
+    }
+    final bool success = await comments.deleteComment(comment.id, images: comment.images);
+    if (!success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(comments.errorMessage ?? 'Failed to delete comment.')),
+      );
+    }
   }
 }
 
@@ -464,16 +494,18 @@ class _CommentComposerState extends State<_CommentComposer> {
   }
 }
 
-class _CommentEditDialog extends StatefulWidget {
-  const _CommentEditDialog({required this.comment});
+class _CommentEditForm extends StatefulWidget {
+  const _CommentEditForm({required this.comment, required this.onCancel, required this.onSaved});
 
   final Comment comment;
+  final VoidCallback onCancel;
+  final VoidCallback onSaved;
 
   @override
-  State<_CommentEditDialog> createState() => _CommentEditDialogState();
+  State<_CommentEditForm> createState() => _CommentEditFormState();
 }
 
-class _CommentEditDialogState extends State<_CommentEditDialog> {
+class _CommentEditFormState extends State<_CommentEditForm> {
   late final TextEditingController _bodyController = TextEditingController(text: widget.comment.body);
   final Set<int> _removedImageIds = <int>{};
   List<XFile> _newImages = <XFile>[];
@@ -512,12 +544,13 @@ class _CommentEditDialogState extends State<_CommentEditDialog> {
       removedImageIds: _removedImageIds.toList(),
       newImages: _newImages,
     );
-    if (mounted) {
-      if (success) {
-        Navigator.of(context).pop();
-      } else {
-        setState(() => _isSubmitting = false);
-      }
+    if (!mounted) {
+      return;
+    }
+    if (success) {
+      widget.onSaved();
+    } else {
+      setState(() => _isSubmitting = false);
     }
   }
 
@@ -528,29 +561,60 @@ class _CommentEditDialogState extends State<_CommentEditDialog> {
         .where((CommentImage image) => !_removedImageIds.contains(image.id))
         .map((CommentImage image) => ExistingPickerImage(id: image.id, url: comments.imageUrl(image.imagePath)))
         .toList();
-    return AlertDialog(
-      title: const Text('Edit comment'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          TextField(controller: _bodyController, maxLines: 4),
-          const SizedBox(height: 12),
-          MultiImagePicker(
-            existingImages: existingPickerImages,
-            newImages: _newImages,
-            onRemoveExisting: _onRemoveExisting,
-            onImagesAdded: _onImagesAdded,
-            onRemoveNew: _onRemoveNew,
-            tileSize: 72,
-            enabled: !_isSubmitting,
-          ),
-        ],
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.surfaceContainerHighest)),
       ),
-      actions: <Widget>[
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-        FilledButton(onPressed: _isSubmitting ? null : _submit, child: const Text('Save')),
-      ],
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 24, top: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            InitialsAvatar(email: widget.comment.authorEmail, radius: 20, highlighted: true),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  TextField(
+                    controller: _bodyController,
+                    maxLines: 4,
+                    style: AppTypography.bodyMd,
+                    autofocus: true,
+                    decoration: const InputDecoration(border: UnderlineInputBorder()),
+                  ),
+                  const SizedBox(height: 12),
+                  MultiImagePicker(
+                    existingImages: existingPickerImages,
+                    newImages: _newImages,
+                    onRemoveExisting: _onRemoveExisting,
+                    onImagesAdded: _onImagesAdded,
+                    onRemoveNew: _onRemoveNew,
+                    tileSize: 72,
+                    enabled: !_isSubmitting,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      TextButton(
+                        onPressed: _isSubmitting ? null : widget.onCancel,
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: _isSubmitting ? null : _submit,
+                        style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                        child: const Text('Save'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
